@@ -7,7 +7,7 @@ import (
 )
 
 type CreateRestaurantStore interface { //interface ->  khai báo ở nơi dùng nó
-	CreateRestaurant(ctx context.Context, data *restaurantmodel.RestaurantCreate) error
+	Create(ctx context.Context, data *restaurantmodel.RestaurantCreate) error
 }
 
 type createRestaurantBiz struct {
@@ -23,7 +23,7 @@ func (biz *createRestaurantBiz) CreateRestaurant(ctx context.Context, data *rest
 		return errors.New("name is required")
 	}
 
-	if err := biz.store.CreateRestaurant(ctx, data); err != nil {
+	if err := biz.store.Create(ctx, data); err != nil {
 		return err
 	}
 

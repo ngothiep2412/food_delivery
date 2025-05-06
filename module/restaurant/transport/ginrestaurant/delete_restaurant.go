@@ -4,19 +4,19 @@ import (
 	"g05-food-delivery/common"
 	"g05-food-delivery/component/appctx"
 	restaurantbiz "g05-food-delivery/module/restaurant/biz"
-	restaurantmodel "g05-food-delivery/module/restaurant/model"
 	restaurantstorage "g05-food-delivery/module/restaurant/storage"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
-func CreateRestaurant(appCtx appctx.AppContext) gin.HandlerFunc {
+func DeleteRestaurant(appCtx appctx.AppContext) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		db := appCtx.GetMaiDBConnection()
 
-		var data restaurantmodel.RestaurantCreate
+		id, err := strconv.Atoi(c.Param("id"))
 
-		if err := c.ShouldBind(&data); err != nil { //bind toàn bộ request bind vào
+		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
 			})
@@ -25,9 +25,9 @@ func CreateRestaurant(appCtx appctx.AppContext) gin.HandlerFunc {
 		}
 
 		store := restaurantstorage.NewSQLStore(db)
-		biz := restaurantbiz.NewCreateRestaurant(store)
+		biz := restaurantbiz.NewDeleteRestaurant(store)
 
-		if err := biz.CreateRestaurant(c.Request.Context(), &data); err != nil {
+		if err := biz.DeleteRestaurant(c.Request.Context(), id); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
 			})
@@ -35,6 +35,6 @@ func CreateRestaurant(appCtx appctx.AppContext) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, common.SimpleSuccessResponse(data.Id))
+		c.JSON(http.StatusOK, common.SimpleSuccessResponse(true))
 	}
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"g05-food-delivery/component/appctx"
 	"g05-food-delivery/module/restaurant/transport/ginrestaurant"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
@@ -35,6 +36,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	db = db.Debug()
+
 	r := gin.Default()
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -42,12 +45,14 @@ func main() {
 		})
 	})
 
+	appCtx := appctx.NewAppContext(db)
+
 	// POST /restaurants
 	v1 := r.Group("/api/v1")
 
 	restaurants := v1.Group("/restaurants")
 
-	restaurants.POST("", ginrestaurant.CreateRestaurant(db))
+	restaurants.POST("", ginrestaurant.CreateRestaurant(appCtx))
 
 	restaurants.GET("/:id", func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("id"))
@@ -67,42 +72,7 @@ func main() {
 		})
 	})
 
-	restaurants.GET("", func(c *gin.Context) {
-		var data []Restaurant
-
-		type Paging struct {
-			Page  int `json:"page" form:"page"`
-			Limit int `json:"limit" form:"limit"`
-		}
-
-		var pagingData Paging
-
-		if err := c.ShouldBind(&pagingData); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-
-		if pagingData.Page <= 0 {
-			pagingData.Page = 1
-		}
-
-		if pagingData.Limit <= 0 {
-			pagingData.Limit = 2
-		}
-
-		db.Offset((pagingData.Page - 1) * pagingData.Limit).
-			Order("id desc").
-			Limit(pagingData.Limit).
-			Find(&data)
-
-		c.JSON(http.StatusOK, gin.H{
-			"data": data,
-		})
-
-	})
+	restaurants.GET("", ginrestaurant.ListRestaurant(appCtx))
 
 	restaurants.PATCH("/:id", func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("id"))
@@ -130,23 +100,7 @@ func main() {
 		})
 	})
 
-	restaurants.DELETE("/:id", func(c *gin.Context) {
-		id, err := strconv.Atoi(c.Param("id"))
-
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-
-		db.Table(Restaurant{}.TableName()).Where("id = ?", id).Delete(nil)
-
-		c.JSON(http.StatusOK, gin.H{
-			"data": 1,
-		})
-	})
+	restaurants.DELETE("/:id", ginrestaurant.DeleteRestaurant(appCtx))
 
 	r.Run()
 
