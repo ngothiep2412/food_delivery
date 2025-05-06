@@ -1,6 +1,12 @@
 package restaurantmodel
 
-import "g05-food-delivery/common"
+import (
+	"errors"
+	"g05-food-delivery/common"
+	"strings"
+)
+
+const EntityName = "Restaurant"
 
 type Restaurant struct {
 	common.SqlModel `json:",inline"`
@@ -16,6 +22,16 @@ type RestaurantCreate struct {
 	Addr            string `json:"addr" gorm:"column:addr"`
 }
 
+func (data *RestaurantCreate) Validate() error {
+	data.Name = strings.TrimSpace(data.Name)
+
+	if data.Name == "" {
+		return ErrNameIsEmpty
+	}
+
+	return nil
+}
+
 func (RestaurantCreate) TableName() string { return Restaurant{}.TableName() }
 
 type RestaurantUpdate struct {
@@ -24,3 +40,7 @@ type RestaurantUpdate struct {
 }
 
 func (RestaurantUpdate) TableName() string { return Restaurant{}.TableName() }
+
+var (
+	ErrNameIsEmpty = errors.New("name cannot be empty")
+)

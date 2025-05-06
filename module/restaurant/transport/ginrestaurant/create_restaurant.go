@@ -17,22 +17,22 @@ func CreateRestaurant(appCtx appctx.AppContext) gin.HandlerFunc {
 		var data restaurantmodel.RestaurantCreate
 
 		if err := c.ShouldBind(&data); err != nil { //bind toàn bộ request bind vào
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
+			//c.JSON(http.StatusBadRequest, common.ErrInvalidRequest(err))
+			//
+			//return
 
-			return
+			panic(err) // chỉ xaì panic cho tầng ngoài cùng
 		}
 
 		store := restaurantstorage.NewSQLStore(db)
 		biz := restaurantbiz.NewCreateRestaurant(store)
 
 		if err := biz.CreateRestaurant(c.Request.Context(), &data); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
+			//c.JSON(http.StatusBadRequest, err)
+			//
+			//return
 
-			return
+			panic(err)
 		}
 
 		c.JSON(http.StatusOK, common.SimpleSuccessResponse(data.Id))

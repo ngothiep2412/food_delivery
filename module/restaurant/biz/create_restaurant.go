@@ -2,7 +2,7 @@ package restaurantbiz
 
 import (
 	"context"
-	"errors"
+	"g05-food-delivery/common"
 	restaurantmodel "g05-food-delivery/module/restaurant/model"
 )
 
@@ -19,12 +19,12 @@ func NewCreateRestaurant(store CreateRestaurantStore) *createRestaurantBiz {
 }
 
 func (biz *createRestaurantBiz) CreateRestaurant(ctx context.Context, data *restaurantmodel.RestaurantCreate) error {
-	if data.Name == "" {
-		return errors.New("name is required")
+	if err := data.Validate(); err != nil {
+		return common.ErrInvalidRequest(err)
 	}
 
 	if err := biz.store.Create(ctx, data); err != nil {
-		return err
+		return common.ErrCannotCreateEntity(restaurantmodel.EntityName, err)
 	}
 
 	return nil
