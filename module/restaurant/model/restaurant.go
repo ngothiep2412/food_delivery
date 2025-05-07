@@ -16,10 +16,18 @@ type Restaurant struct {
 
 func (Restaurant) TableName() string { return "restaurants" }
 
+func (r *Restaurant) Mask(isAdminOrOwner bool) {
+	r.GetUID(common.DBTypeRestaurant)
+}
+
 type RestaurantCreate struct {
 	common.SqlModel `json:",inline"`
 	Name            string `json:"name" gorm:"column:name"`
 	Addr            string `json:"addr" gorm:"column:addr"`
+}
+
+func (data *RestaurantCreate) Mask(isAdminOrOwner bool) {
+	data.GetUID(common.DBTypeRestaurant)
 }
 
 func (data *RestaurantCreate) Validate() error {

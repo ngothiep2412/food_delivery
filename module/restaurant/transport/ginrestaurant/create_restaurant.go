@@ -14,6 +14,14 @@ func CreateRestaurant(appCtx appctx.AppContext) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		db := appCtx.GetMaiDBConnection()
 
+		//go func() {
+		//	defer common.AppRecover()
+		//
+		//	var arr []int
+		//
+		//	log.Println(arr[0])
+		//}()
+
 		var data restaurantmodel.RestaurantCreate
 
 		if err := c.ShouldBind(&data); err != nil { //bind toàn bộ request bind vào
@@ -35,6 +43,8 @@ func CreateRestaurant(appCtx appctx.AppContext) gin.HandlerFunc {
 			panic(err)
 		}
 
-		c.JSON(http.StatusOK, common.SimpleSuccessResponse(data.Id))
+		data.Mask(false)
+
+		c.JSON(http.StatusOK, common.SimpleSuccessResponse(data.FakeId.String()))
 	}
 }

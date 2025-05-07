@@ -2,8 +2,8 @@ package common
 
 type successResp struct {
 	Data   interface{} `json:"data"`
-	Paging interface{} `json:"paging"`
-	Filter interface{} `json:"filter"`
+	Paging interface{} `json:"paging,omitempty"`
+	Filter interface{} `json:"filter,omitempty"`
 }
 
 func NewSuccessResponse(data, paging, filter interface{}) *successResp {
