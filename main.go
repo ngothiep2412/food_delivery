@@ -2,8 +2,10 @@ package main
 
 import (
 	"g05-food-delivery/component/appctx"
+	"g05-food-delivery/component/uploadprovider"
 	"g05-food-delivery/middleware"
 	"g05-food-delivery/module/restaurant/transport/ginrestaurant"
+	"g05-food-delivery/module/upload/transport/ginupload"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -29,7 +31,24 @@ type RestaurantUpdate struct {
 func (RestaurantUpdate) TableName() string { return Restaurant{}.TableName() }
 
 func main() {
+	//test := Restaurant{
+	//	Id:   1,
+	//	Name: "test",
+	//	Addr: "127.0.0.1",
+	//}
+
+	//json.Marshal(test)
+	//
+	//log.Println(test) //{1 test 127.0.0.1}
+
 	dsn := os.Getenv("MYSQL_CONN_STRING")
+
+	s3Region := os.Getenv("S3Region")
+	s3BucketName := os.Getenv("S3BucketName")
+	s3ApiKey := os.Getenv("S3ApiKey")
+	s3SecretKey := os.Getenv("S3SecretKey")
+	S3Domain := os.Getenv("S3Domain")
+
 	//
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
@@ -39,22 +58,22 @@ func main() {
 
 	db = db.Debug()
 
+	s3Provider := uploadprovider.NewS3Provider(s3BucketName, s3Region, s3ApiKey, S3Domain, s3SecretKey)
+
 	r := gin.Default()
 
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "pong",
-		})
-	})
-
-	appCtx := appctx.NewAppContext(db)
+	appCtx := appctx.NewAppContext(db, s3Provider)
 
 	r.Use(middleware.Recover(appCtx))
+
+	r.Static("/static", "./static")
 
 	// POST /restaurants
 	v1 := r.Group("/api/v1")
 
 	restaurants := v1.Group("/restaurants")
+
+	v1.POST("/upload", ginupload.UploadImage(appCtx))
 
 	restaurants.POST("", ginrestaurant.CreateRestaurant(appCtx))
 
