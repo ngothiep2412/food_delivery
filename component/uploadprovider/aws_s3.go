@@ -72,9 +72,9 @@ func (provider *S3Provider) SaveFileUploaded(ctx context.Context, dataBytes []by
 	fileType := http.DetectContentType(dataBytes)
 
 	_, err := s3.New(provider.session).PutObject(&s3.PutObjectInput{
-		Bucket: aws.String(provider.bucketName),
-		Key:    aws.String(dst),
-		//ACL:         aws.String("private"),
+		Bucket:      aws.String(provider.bucketName),
+		Key:         aws.String(dst),
+		ACL:         aws.String("private"),
 		Body:        fileBytes,
 		ContentType: aws.String(fileType),
 	})
