@@ -4,16 +4,11 @@ import (
 	"g05-food-delivery/component/appctx"
 	"g05-food-delivery/component/uploadprovider"
 	"g05-food-delivery/middleware"
-	"g05-food-delivery/module/restaurant/transport/ginrestaurant"
-	"g05-food-delivery/module/upload/transport/ginupload"
-	"g05-food-delivery/module/user/transport/ginuser"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
-	"net/http"
 	"os"
-	"strconv"
 )
 
 type Restaurant struct {
@@ -73,64 +68,9 @@ func main() {
 	// POST /restaurants
 	v1 := r.Group("/api/v1")
 
-	restaurants := v1.Group("/restaurants")
+	setupRoute(appCtx, v1)
+	setupAdminRoute(appCtx, v1)
 
-	v1.POST("/upload", ginupload.UploadImage(appCtx))
-
-	restaurants.POST("", ginrestaurant.CreateRestaurant(appCtx))
-
-	restaurants.GET("/:id", func(c *gin.Context) {
-		id, err := strconv.Atoi(c.Param("id"))
-
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-		}
-
-		var data Restaurant
-
-		db.Where("id = ?", id).First(&data)
-
-		c.JSON(http.StatusOK, gin.H{
-			"data": data,
-		})
-	})
-
-	restaurants.GET("", ginrestaurant.ListRestaurant(appCtx))
-
-	restaurants.PATCH("/:id", func(c *gin.Context) {
-		id, err := strconv.Atoi(c.Param("id"))
-
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-
-		var data RestaurantUpdate
-
-		if err := c.ShouldBind(&data); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-		}
-
-		db.Where("id = ?", id).Updates(&data)
-
-		c.JSON(http.StatusOK, gin.H{
-			"data": data,
-		})
-	})
-
-	restaurants.DELETE("/:id", ginrestaurant.DeleteRestaurant(appCtx))
-
-	// User
-	v1.POST("/register", ginuser.Register(appCtx))
-	v1.POST("/authenticate", ginuser.Login(appCtx))
-	v1.GET("/profile", middleware.RequireAuth(appCtx), ginuser.Profile(appCtx))
 	r.Run()
 
 	//newRestaurant := Restaurant{Name: "Tani", Addr: "9 Pham Van Hai"}

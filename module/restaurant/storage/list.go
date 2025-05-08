@@ -35,6 +35,10 @@ func (s *sqlStore) ListDataWithCondition(
 		return nil, common.ErrDB(err)
 	}
 
+	for i := range moreKeys {
+		db = db.Preload(moreKeys[i])
+	}
+
 	if v := paging.FakeCursor; v != "" {
 		uid, err := common.FromBase58(v)
 

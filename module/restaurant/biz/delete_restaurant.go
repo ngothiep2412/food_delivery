@@ -17,11 +17,12 @@ type DeleteRestaurantStore interface {
 }
 
 type DeleteRestaurantBiz struct {
-	store DeleteRestaurantStore
+	store     DeleteRestaurantStore
+	requester common.Requester
 }
 
-func NewDeleteRestaurant(store DeleteRestaurantStore) *DeleteRestaurantBiz {
-	return &DeleteRestaurantBiz{store: store}
+func NewDeleteRestaurant(store DeleteRestaurantStore, requester common.Requester) *DeleteRestaurantBiz {
+	return &DeleteRestaurantBiz{store: store, requester: requester}
 }
 
 func (biz *DeleteRestaurantBiz) DeleteRestaurant(ctx context.Context, id int) error {
@@ -37,6 +38,10 @@ func (biz *DeleteRestaurantBiz) DeleteRestaurant(ctx context.Context, id int) er
 
 	if oldData.Status == 0 {
 		return common.ErrEntityDeleted(restaurantmodel.EntityName, err)
+	}
+
+	if oldData.UserId != biz.requester.GetUserId() {
+		return common.ErrNoPermission(nil)
 	}
 
 	if err := biz.store.Delete(ctx, id); err != nil {

@@ -14,6 +14,8 @@ func CreateRestaurant(appCtx appctx.AppContext) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		db := appCtx.GetMaiDBConnection()
 
+		requester := c.MustGet(common.CurrentUser).(common.Requester)
+
 		//go func() {
 		//	defer common.AppRecover()
 		//
@@ -31,6 +33,8 @@ func CreateRestaurant(appCtx appctx.AppContext) gin.HandlerFunc {
 
 			panic(err) // chỉ xaì panic cho tầng ngoài cùng
 		}
+
+		data.OwnerId = requester.GetUserId()
 
 		store := restaurantstorage.NewSQLStore(db)
 		biz := restaurantbiz.NewCreateRestaurant(store)
