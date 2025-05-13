@@ -4,6 +4,7 @@ import (
 	"g05-food-delivery/component/appctx"
 	"g05-food-delivery/middleware"
 	"g05-food-delivery/module/restaurant/transport/ginrestaurant"
+	"g05-food-delivery/module/restaurantlike/transport/ginrstlike"
 	"g05-food-delivery/module/upload/transport/ginupload"
 	"g05-food-delivery/module/user/transport/ginuser"
 	"github.com/gin-gonic/gin"
@@ -66,6 +67,10 @@ func setupRoute(appCtx appctx.AppContext, v1 *gin.RouterGroup) {
 	})
 
 	restaurants.DELETE("/:id", middleware.RequireAuth(appCtx), ginrestaurant.DeleteRestaurant(appCtx))
+
+	restaurants.POST("/:id/liked-users", middleware.RequireAuth(appCtx), ginrstlike.UserLikeRestaurant(appCtx))
+	restaurants.DELETE("/:id/liked-users", middleware.RequireAuth(appCtx), ginrstlike.UserUnLikeRestaurant(appCtx))
+	restaurants.GET("/:id/liked-users", ginrstlike.ListUsers(appCtx))
 
 	// User
 	v1.POST("/register", ginuser.Register(appCtx))

@@ -16,6 +16,7 @@ type Restaurant struct {
 	Cover           *common.Images     `json:"cover" gorm:"column:cover"`
 	UserId          int                `json:"-" gorm:"column:owner_id"`
 	User            *common.SimpleUser `json:"user" gorm:"preload:false"`
+	LikedCount      int                `json:"liked-count" gorm:"column:liked_count"`
 }
 
 func (Restaurant) TableName() string { return "restaurants" }
