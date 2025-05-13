@@ -27,6 +27,8 @@ func NewUserUnlikeRestaurantBiz(store UserUnlikeRestaurantStore, decStore UserDe
 	}
 }
 
+// Side effect
+
 func (biz *userUnlikeRestaurantBiz) UnlikeRestaurant(ctx context.Context,
 	data *restaurantlikemodel.UnLike,
 ) error {
