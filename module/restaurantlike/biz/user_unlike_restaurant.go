@@ -1,7 +1,7 @@
 package rstlikebiz
 
 import (
-	"g05-food-delivery/common"
+	"g05-food-delivery/component/asyncjob"
 	restaurantlikemodel "g05-food-delivery/module/restaurantlike/model"
 	"golang.org/x/net/context"
 	"log"
@@ -31,17 +31,19 @@ func (biz *userUnlikeRestaurantBiz) UnlikeRestaurant(ctx context.Context,
 	data *restaurantlikemodel.UnLike,
 ) error {
 	err := biz.store.Delete(ctx, data)
+
 	if err != nil {
 		return restaurantlikemodel.ErrCannotUnlikeRestaurant(err)
 	}
 
-	go func() {
-		defer common.AppRecover()
+	j := asyncjob.NewJob(func(ctx context.Context) error {
+		return biz.decStore.DecreaseLikeCount(ctx, data.RestaurantId)
+	})
 
-		if err := biz.decStore.DecreaseLikeCount(ctx, data.RestaurantId); err != nil {
-			log.Println(err)
-		}
-	}()
+	if err := asyncjob.NewGroup(true, j); err != nil {
+		log.Println(err)
+	}
 
 	return nil
+
 }

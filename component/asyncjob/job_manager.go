@@ -1,0 +1,92 @@
+package asyncjob
+
+import (
+	"g05-food-delivery/common"
+	"golang.org/x/net/context"
+	"log"
+	"sync"
+)
+
+type group struct {
+	jobs         []*job
+	isConcurrent bool
+	wg           *sync.WaitGroup
+}
+
+func NewGroup(isConcurrent bool, jobs ...*job) *group {
+	g := &group{
+		isConcurrent: isConcurrent,
+		jobs:         jobs,
+		wg:           new(sync.WaitGroup),
+	}
+
+	return g
+}
+
+func (g *group) Run(ctx context.Context) error {
+	g.wg.Add(len(g.jobs))
+
+	errChan := make(chan error, len(g.jobs)) // buffer chanel
+
+	for i, _ := range g.jobs {
+		if g.isConcurrent {
+			go func(aj *job) {
+				defer common.AppRecover()
+
+				errChan <- g.runJob(ctx, aj)
+				g.wg.Done()
+			}(g.jobs[i])
+
+			// bị lỗi do i thay đổi đến cuối cùng
+			//go func() {
+			//	defer common.AppRecover()
+			//
+			//	errChan <- g.runJob(ctx, g.jobs[i])
+			//	g.wg.Done()
+			//}()
+
+			continue
+		}
+
+		job := g.jobs[i]
+
+		err := g.runJob(ctx, job)
+
+		if err != nil {
+			return err
+		}
+
+		errChan <- err
+		g.wg.Done()
+	}
+
+	g.wg.Wait()
+
+	var err error
+
+	for i := 1; i <= len(g.jobs); i++ {
+		if v := <-errChan; v != nil {
+			//err = v
+			return v
+		}
+	}
+
+	return err
+}
+
+func (g *group) runJob(ctx context.Context, j *job) error {
+	if err := j.Execute(ctx); err != nil {
+		for {
+			log.Println(err)
+			if j.State() == StateRetryFailed {
+				return err
+			}
+
+			if j.Retry(ctx) == nil {
+				return nil
+			}
+		}
+	}
+
+	return nil
+}
