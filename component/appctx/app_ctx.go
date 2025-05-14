@@ -3,6 +3,7 @@ package appctx
 import (
 	"g05-food-delivery/component/uploadprovider"
 	"g05-food-delivery/pubsub"
+	"g05-food-delivery/skio"
 	"gorm.io/gorm"
 )
 
@@ -11,6 +12,7 @@ type AppContext interface {
 	UploadProvider() uploadprovider.UploadProvider
 	SecretKey() string
 	GetPubSub() pubsub.Pubsub
+	GetRealtimeEngine() skio.RealtimeEngine
 }
 
 type appCtx struct {
@@ -18,12 +20,14 @@ type appCtx struct {
 	uploadProvider uploadprovider.UploadProvider
 	secretKey      string
 	ps             pubsub.Pubsub
+	rlEngine       skio.RealtimeEngine
 }
 
 func NewAppContext(db *gorm.DB,
 	provider uploadprovider.UploadProvider,
 	secretKey string,
-	ps pubsub.Pubsub) *appCtx {
+	ps pubsub.Pubsub,
+) *appCtx {
 	return &appCtx{db: db,
 		uploadProvider: provider,
 		secretKey:      secretKey,
@@ -40,4 +44,12 @@ func (c *appCtx) SecretKey() string {
 }
 func (c *appCtx) GetPubSub() pubsub.Pubsub {
 	return c.ps
+}
+
+func (c *appCtx) GetRealtimeEngine() skio.RealtimeEngine {
+	return c.rlEngine
+}
+
+func (c *appCtx) SetRealtimeEngine(rltEngine skio.RealtimeEngine) {
+	c.rlEngine = rltEngine
 }

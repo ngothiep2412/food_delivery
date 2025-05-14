@@ -5,6 +5,7 @@ import (
 	"g05-food-delivery/component/uploadprovider"
 	"g05-food-delivery/middleware"
 	"g05-food-delivery/pubsub/pblocal"
+	"g05-food-delivery/skio"
 	"g05-food-delivery/subscriber"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
@@ -72,14 +73,20 @@ func main() {
 	r.Use(middleware.Recover(appCtx))
 
 	r.Static("/static", "./static")
+	r.StaticFile("/demo", "./demo.html")
 
 	// POST /restaurants
 	v1 := r.Group("/api/v1")
 
 	setupRoute(appCtx, v1)
 	setupAdminRoute(appCtx, v1)
+	//
+	rlEngine := skio.NewEngine()
+	appCtx.SetRealtimeEngine(rlEngine)
 
-	r.Run()
+	_ = rlEngine.Run(appCtx, r)
+
+	//startSocketIOServer(r, appCtx)
 
 	//newRestaurant := Restaurant{Name: "Tani", Addr: "9 Pham Van Hai"}
 	//
@@ -111,4 +118,91 @@ func main() {
 	//if err := db.Table(Restaurant{}.TableName()).Where("id = ?", 1).Delete(nil).Error; err != nil {
 	//	log.Println(err)
 	//}
+
+	r.Run()
 }
+
+//func startSocketIOServer(engine *gin.Engine, appCtx appctx.AppContext) {
+//	server, _ := socketio.NewServer(&engineio.Options{
+//		Transports: []transport.Transport{websocket.Default},
+//	})
+//
+//	server.OnConnect("/", func(s socketio.Conn) error {
+//		//s.SetContext("")
+//		fmt.Println("socket connected:", s.ID(), "IP:", s.RemoteAddr())
+//
+//		s.Join("Shipper")
+//
+//		s.Emit("test", "test: hello")
+//		return nil
+//	})
+//
+//	//go func() {
+//	//	for range time.NewTicker(time.Second).C {
+//	//		server.BroadcastToRoom("/", "Shipper", "test", "Ahihi")
+//	//	}
+//	//}()
+//
+//	server.OnError("/", func(s socketio.Conn, e error) {
+//		fmt.Println("meet error:", e)
+//	})
+//
+//	server.OnDisconnect("/", func(s socketio.Conn, reason string) {
+//		fmt.Println("closed:", reason)
+//	})
+//
+//	// Handle user like restaurant events
+//	server.OnEvent("/", "test", func(s socketio.Conn, msg interface{}) {
+//		log.Println(msg)
+//	})
+//
+//	type Person struct {
+//		Name string `json:"name"`
+//		Age  int    `json:"age"`
+//	}
+//
+//	server.OnEvent("/", "notice", func(s socketio.Conn, p Person) { // reflex để autodetect nếu struct unmusal binary
+//		log.Println("server receive notice:", p.Name, p.Age)
+//
+//		p.Age = 33
+//		s.Emit("notice", p)
+//	})
+//
+//	server.OnEvent("/", "authenticate", func(s socketio.Conn, token string) {
+//		db := appCtx.GetMaiDBConnection()
+//		store := userstorage.NewSQLStore(db)
+//
+//		tokenpProvider := jwt.NewTokenJwtProvider(appCtx.SecretKey())
+//
+//		payload, err := tokenpProvider.Validate(token)
+//
+//		if err != nil {
+//			s.Emit("authentication_failed", err.Error())
+//			s.Close()
+//			return
+//		}
+//
+//		user, err := store.FindUser(context.Background(), map[string]interface{}{"id": payload.UserId})
+//
+//		if err != nil {
+//			s.Emit("authentication_failed", err.Error())
+//			s.Close()
+//			return
+//		}
+//
+//		if user.Status == 0 {
+//			s.Emit("authentication_failed", errors.New("you has been banned/deleted"))
+//			s.Close()
+//			return
+//		}
+//
+//		user.Mask(false)
+//
+//		s.Emit("your_profile", user)
+//	})
+//
+//	go server.Serve()
+//
+//	engine.GET("/socket.io/*any", gin.WrapH(server))
+//	engine.POST("/socket.io/*any", gin.WrapH(server))
+//}

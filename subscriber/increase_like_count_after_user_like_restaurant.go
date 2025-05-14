@@ -61,7 +61,20 @@ func PushNotificationWhenUserLikeRestaurant(appCtx appctx.AppContext) consumerJo
 			log.Println("Push notification when user likes restaurant id:", likeData.GetRestaurantId())
 
 			// Nếu có handler token,.. -> nên xài pubsub khác để lắng nghe
-			
+
+			return nil
+		},
+	}
+}
+
+func EmitIncreaseLikeCountAfterUserLikeRestaurant(appCtx appctx.AppContext) consumerJob {
+	return consumerJob{
+		Title: "Realtime emit after user likes restaurant ",
+		Hld: func(ctx context.Context, message *pubsub.Message) error {
+			likeData := message.Data().(HasRestaurantId)
+
+			appCtx.GetRealtimeEngine().EmitToUser(likeData.GetUserId(), string(message.Channel()), likeData)
+
 			return nil
 		},
 	}

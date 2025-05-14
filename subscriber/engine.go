@@ -27,6 +27,7 @@ func (engine *consumerEngine) Start() error {
 		true,
 		IncreaseLikeCountAfterUserLikeRestaurant(engine.appCtx),
 		PushNotificationWhenUserLikeRestaurant(engine.appCtx),
+		EmitIncreaseLikeCountAfterUserLikeRestaurant(engine.appCtx),
 	)
 
 	engine.startSubTopic(common.TopicUserUnlikeRestaurant,
