@@ -26,6 +26,16 @@ func (Like) TableName() string {
 func (l *Like) GetRestaurantId() int {
 	return l.RestaurantId
 }
+func (l *Like) GetUserId() int {
+	return l.UserId
+}
+
+func (ul *UnLike) GetRestaurantId() int {
+	return ul.RestaurantId
+}
+func (ul *UnLike) GetUserId() int {
+	return ul.UserId
+}
 
 func ErrCannotLikeRestaurant(err error) *common.AppError {
 	return common.NewCustomError(err,

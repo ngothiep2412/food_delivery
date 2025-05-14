@@ -1,8 +1,9 @@
 package rstlikebiz
 
 import (
-	"g05-food-delivery/component/asyncjob"
+	"g05-food-delivery/common"
 	restaurantlikemodel "g05-food-delivery/module/restaurantlike/model"
+	"g05-food-delivery/pubsub"
 	"golang.org/x/net/context"
 	"log"
 )
@@ -11,20 +12,25 @@ type UserLikeRestaurantStore interface {
 	Create(ctx context.Context, data *restaurantlikemodel.Like) error
 }
 
-type InclikedCountResStore interface {
-	IncreaseLikeCount(ctx context.Context, id int) error
-}
+//type InclikedCountResStore interface {
+//	IncreaseLikeCount(ctx context.Context, id int) error
+//}
 
 type userLikeRestaurantBiz struct {
-	store    UserLikeRestaurantStore
-	incStore InclikedCountResStore
+	store UserLikeRestaurantStore
+	//incStore InclikedCountResStore
+	ps pubsub.Pubsub
 }
 
 func NewUserLikeRestaurantBiz(
-	store UserLikeRestaurantStore, incStore InclikedCountResStore) *userLikeRestaurantBiz {
+	store UserLikeRestaurantStore,
+	//incStore InclikedCountResStore,
+	ps pubsub.Pubsub,
+) *userLikeRestaurantBiz {
 	return &userLikeRestaurantBiz{
-		store:    store,
-		incStore: incStore,
+		store: store,
+		//incStore: incStore,
+		ps: ps,
 	}
 }
 
@@ -37,13 +43,18 @@ func (biz *userLikeRestaurantBiz) LikeRestaurant(ctx context.Context,
 		panic(restaurantlikemodel.ErrCannotLikeRestaurant(err))
 	}
 
-	j := asyncjob.NewJob(func(ctx context.Context) error {
-		return biz.incStore.IncreaseLikeCount(ctx, data.RestaurantId)
-	})
-
-	if err := asyncjob.NewGroup(true, j); err != nil {
+	// Send message
+	if err := biz.ps.Publish(ctx, common.TopicUserLikeRestaurant, pubsub.NewMessage(data)); err != nil {
 		log.Println(err)
 	}
+
+	//j := asyncjob.NewJob(func(ctx context.Context) error {
+	//	return biz.incStore.IncreaseLikeCount(ctx, data.RestaurantId)
+	//})
+	//
+	//if err := asyncjob.NewGroup(true, j); err != nil {
+	//	log.Println(err)
+	//}
 
 	//go func() {
 	//	defer common.AppRecover()

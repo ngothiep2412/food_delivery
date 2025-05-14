@@ -4,6 +4,8 @@ import (
 	"g05-food-delivery/component/appctx"
 	"g05-food-delivery/component/uploadprovider"
 	"g05-food-delivery/middleware"
+	"g05-food-delivery/pubsub/pblocal"
+	"g05-food-delivery/subscriber"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -59,7 +61,13 @@ func main() {
 
 	r := gin.Default()
 
-	appCtx := appctx.NewAppContext(db, s3Provider, secretKey)
+	ps := pblocal.NewPubSub()
+
+	appCtx := appctx.NewAppContext(db, s3Provider, secretKey, ps)
+
+	// setup subscribers
+	//subscriber.Setup(appCtx, context.Background())
+	_ = subscriber.NewEngine(appCtx).Start()
 
 	r.Use(middleware.Recover(appCtx))
 

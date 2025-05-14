@@ -110,6 +110,8 @@ func (j *job) Retry(ctx context.Context) error {
 	return err
 }
 
+// pointer receiver
+
 func (j *job) State() JobState { return j.state }
 func (j *job) RetryIndex() int { return j.retryIndex }
 
