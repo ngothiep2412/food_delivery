@@ -6,10 +6,15 @@ import (
 	"g05-food-delivery/common"
 	"g05-food-delivery/component/appctx"
 	"g05-food-delivery/component/tokenprovider/jwt"
-	userstorage "g05-food-delivery/module/user/storage"
+	usermodel "g05-food-delivery/module/user/model"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/net/context"
 	"strings"
 )
+
+type AuthenStore interface {
+	FindUser(ctx context.Context, conditions map[string]interface{}, moreInfo ...string) (*usermodel.User, error)
+}
 
 func ErrWrongAuthHeader(err error) *common.AppError {
 	return common.NewCustomError(err,
@@ -27,7 +32,7 @@ func extractTokenFromHeaderString(s string) (string, error) {
 	return parts[1], nil
 }
 
-func RequireAuth(ctx appctx.AppContext) func(c *gin.Context) {
+func RequireAuth(ctx appctx.AppContext, authenStore AuthenStore) func(c *gin.Context) {
 	tokenProvider := jwt.NewTokenJwtProvider(ctx.SecretKey())
 
 	return func(c *gin.Context) {
@@ -37,16 +42,17 @@ func RequireAuth(ctx appctx.AppContext) func(c *gin.Context) {
 			panic(err)
 		}
 
-		db := ctx.GetMaiDBConnection()
-		store := userstorage.NewSQLStore(db)
-
+		//db := ctx.GetMaiDBConnection()
+		//store := userstorage.NewSQLStore(db)
+		//
 		payload, err := tokenProvider.Validate(token)
-
 		if err != nil {
 			panic(err)
 		}
+		//
+		//user, err := store.FindUser(c.Request.Context(), map[string]interface{}{"id": payload.UserId})
 
-		user, err := store.FindUser(c.Request.Context(), map[string]interface{}{"id": payload.UserId})
+		user, err := authenStore.FindUser(c.Request.Context(), map[string]interface{}{"id": payload.UserId})
 
 		if err != nil {
 			panic(err)

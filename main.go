@@ -1,6 +1,7 @@
 package main
 
 import (
+	//"contrib.go.opencensus.io/exporter/jaeger"
 	"g05-food-delivery/component/appctx"
 	"g05-food-delivery/component/uploadprovider"
 	"g05-food-delivery/middleware"
@@ -8,9 +9,13 @@ import (
 	"g05-food-delivery/skio"
 	"g05-food-delivery/subscriber"
 	"github.com/gin-gonic/gin"
+	jg "go.opencensus.io/exporter/jaeger"
+	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/trace"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
+	"net/http"
 	"os"
 )
 
@@ -119,7 +124,34 @@ func main() {
 	//	log.Println(err)
 	//}
 
-	r.Run()
+	// Config exporter Jaeger
+	//je, err := jg.NewExporter(jg.Options{
+	//	AgentEndpoint: "localhost:6831",
+	//	Process:       jg.Process{ServiceName: "G05-FoodDelivery"},
+	//})
+
+	je, err := jg.NewExporter(jg.Options{
+		CollectorEndpoint: "http://localhost:14268/api/traces",
+		Process: jg.Process{
+			ServiceName: "G05-FoodDelivery",
+		},
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	trace.RegisterExporter(je)
+	trace.ApplyConfig(trace.Config{DefaultSampler: trace.ProbabilitySampler(1)}) // devops tải cao -> ko
+	// phải request nào cũng trace qua
+
+	http.ListenAndServe(
+		":8080",
+		&ochttp.Handler{
+			Handler: r,
+		})
+
+	//r.Run()
 }
 
 //func startSocketIOServer(engine *gin.Engine, appCtx appctx.AppContext) {

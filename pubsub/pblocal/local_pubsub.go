@@ -88,7 +88,7 @@ func (ps *localPubSub) run() error {
 				for i := range subs {
 					go func(c chan *pubsub.Message) { // xài go -> ko muốn bị đứng
 						defer common.AppRecover()
-						c <- mess // ửi message đến từng subscriber
+						c <- mess // gửi message đến từng subscriber
 					}(subs[i])
 				}
 			}

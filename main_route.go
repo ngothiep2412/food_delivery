@@ -2,10 +2,12 @@ package main
 
 import (
 	"g05-food-delivery/component/appctx"
+	"g05-food-delivery/memcache"
 	"g05-food-delivery/middleware"
 	"g05-food-delivery/module/restaurant/transport/ginrestaurant"
 	"g05-food-delivery/module/restaurantlike/transport/ginrstlike"
 	"g05-food-delivery/module/upload/transport/ginupload"
+	userstorage "g05-food-delivery/module/user/storage"
 	"g05-food-delivery/module/user/transport/ginuser"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -13,12 +15,13 @@ import (
 )
 
 func setupRoute(appCtx appctx.AppContext, v1 *gin.RouterGroup) {
-	db := appCtx.GetMaiDBConnection()
+	userStore := userstorage.NewSQLStore(appCtx.GetMaiDBConnection())
+	userCachingStore := memcache.NewUserCaching(memcache.NewCaching(), userStore)
 	restaurants := v1.Group("/restaurants")
 
 	v1.POST("/upload", ginupload.UploadImage(appCtx))
 
-	restaurants.POST("", middleware.RequireAuth(appCtx), ginrestaurant.CreateRestaurant(appCtx))
+	restaurants.POST("", middleware.RequireAuth(appCtx, userCachingStore), ginrestaurant.CreateRestaurant(appCtx))
 
 	restaurants.GET("/:id", func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("id"))
@@ -31,14 +34,14 @@ func setupRoute(appCtx appctx.AppContext, v1 *gin.RouterGroup) {
 
 		var data Restaurant
 
-		db.Where("id = ?", id).First(&data)
+		appCtx.GetMaiDBConnection().Where("id = ?", id).First(&data)
 
 		c.JSON(http.StatusOK, gin.H{
 			"data": data,
 		})
 	})
 
-	restaurants.GET("", ginrestaurant.ListRestaurant(appCtx))
+	restaurants.GET("", middleware.RequireAuth(appCtx, userCachingStore), ginrestaurant.ListRestaurant(appCtx))
 
 	restaurants.PATCH("/:id", func(c *gin.Context) {
 		id, err := strconv.Atoi(c.Param("id"))
@@ -59,17 +62,17 @@ func setupRoute(appCtx appctx.AppContext, v1 *gin.RouterGroup) {
 			})
 		}
 
-		db.Where("id = ?", id).Updates(&data)
+		appCtx.GetMaiDBConnection().Where("id = ?", id).Updates(&data)
 
 		c.JSON(http.StatusOK, gin.H{
 			"data": data,
 		})
 	})
 
-	restaurants.DELETE("/:id", middleware.RequireAuth(appCtx), ginrestaurant.DeleteRestaurant(appCtx))
+	restaurants.DELETE("/:id", middleware.RequireAuth(appCtx, userCachingStore), ginrestaurant.DeleteRestaurant(appCtx))
 
-	restaurants.POST("/:id/liked-users", middleware.RequireAuth(appCtx), ginrstlike.UserLikeRestaurant(appCtx))
-	restaurants.DELETE("/:id/liked-users", middleware.RequireAuth(appCtx), ginrstlike.UserUnLikeRestaurant(appCtx))
+	restaurants.POST("/:id/liked-users", middleware.RequireAuth(appCtx, userCachingStore), ginrstlike.UserLikeRestaurant(appCtx))
+	restaurants.DELETE("/:id/liked-users", middleware.RequireAuth(appCtx, userCachingStore), ginrstlike.UserUnLikeRestaurant(appCtx))
 	restaurants.GET("/:id/liked-users", ginrstlike.ListUsers(appCtx))
 
 	// User
