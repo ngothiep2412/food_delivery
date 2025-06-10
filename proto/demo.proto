@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package demo;
+option go_package = "./demo";
+
+import "third_party/googleapis/google/api/annotations.proto";
+
+message HelloRequest {
+	string name = 1;
+}
+
+message HelloResponse {
+	string message = 1;
+}
+
+message RestaurantLikeStatRequest {
+	repeated int32 resIds = 1;
+}
+
+message RestaurantLikeStatResponse {
+	map<int32, int32> result = 1;
+}
+
+service HelloService {
+	rpc Hello(HelloRequest) returns (HelloResponse) {
+		option (google.api.http) = {
+			post: "/v1/example/echo"
+			body: "*"
+		};
+	}
+
+	rpc HelloStream(HelloRequest) returns (stream HelloResponse) {
+		// Stream không support HTTP annotations
+	}
+
+	rpc GetRestaurantLikeStat(RestaurantLikeStatRequest) returns (RestaurantLikeStatResponse) {
+		option (google.api.http) = {
+			post: "/v1/restaurant/like-stats"
+			body: "*"
+		};
+	}
+}
