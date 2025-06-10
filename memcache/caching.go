@@ -9,6 +9,7 @@ import (
 type Caching interface {
 	Write(k string, value interface{})
 	Read(k string) interface{}
+	WriteTTL(k string, value interface{}, exp int)
 }
 
 type caching struct {
@@ -45,4 +46,13 @@ func (c *caching) WriteTTL(k string, value interface{}, exp int) {
 		<-time.NewTimer(time.Second * time.Duration(exp)).C
 		c.Write(k, nil)
 	}()
+}
+
+type requestCounter struct {
+	Url   string
+	Count int
+}
+
+type limitRateEngine struct {
+	store Caching
 }
